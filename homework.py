@@ -47,7 +47,7 @@ def last_error_message(message):
 
 
 def send_message(bot, message):
-    """Функция отправки сообщения"""
+    """Функция отправки сообщения."""
     try:
         bot.send_message(TELEGRAM_CHAT_ID, message)
         logger.info('Сообщение отправленное в Телегграмм')
@@ -58,7 +58,7 @@ def send_message(bot, message):
 
 
 def get_api_answer(current_timestamp):
-    """Функция подключения к API яндекса"""
+    """Функция подключения к API яндекса."""
     timestamp = current_timestamp or int(time.time())
     params = {'from_date': timestamp}
     try:
@@ -68,12 +68,13 @@ def get_api_answer(current_timestamp):
         logger.error(f'{ENDPOINT} недоступен {error}')
         raise
     if request.status_code != HTTPStatus.OK:
-        raise APIstatusCodeNot200(f'Код запроса API равен {requests.status_codes} ')
+        raise APIstatusCodeNot200(f'Код запроса API равен'
+                                  f' {requests.status_codes} ')
     return request.json()
 
 
 def check_response(response):
-    """Функция проверки ответа API"""
+    """Функция проверки ответа API."""
     if type(response) != dict:
         logger.error('В ответе отсутствует словарь!')
         raise TypeError('В ответе отсутствует словарь!')
@@ -91,7 +92,7 @@ def check_response(response):
 
 
 def parse_status(homework):
-    """Функция проверки статуса домашней работы"""
+    """Функция проверки статуса домашней работы."""
     homework_name = homework.get('homework_name')
     homework_status = homework.get('status')
     if homework_status not in HOMEWORK_STATUSES:
@@ -102,7 +103,7 @@ def parse_status(homework):
 
 
 def check_tokens():
-    """Функция проверки обязательных элеиентов окружения"""
+    """Функция проверки обязательных элеиентов окружения."""
     if (PRACTICUM_TOKEN is None
             or TELEGRAM_TOKEN is None or TELEGRAM_CHAT_ID is None):
         logger.critical('Отсутствуют обязательные переменные окружения!'
