@@ -29,7 +29,8 @@ HOMEWORK_VERDICTS = {
 }
 
 logging.basicConfig(
-    format='%(asctime)s - [%(levelname)s] - %(message)s - Имя функции:[%(funcName)s] - %(lineno)d',
+    format='%(asctime)s - [%(levelname)s] - %(message)s - '
+           'Имя функции:[%(funcName)s] - %(lineno)d',
     handlers=[logging.StreamHandler(sys.stdout)])
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
