@@ -3,6 +3,16 @@ class APIstatusCodeNot200Error(Exception):
     pass
 
 
-class KeysError(Exception):
+class TelegramMessageError(Exception):
     """Исключение на случай, если ответ API некорректен."""
+    pass
+
+
+class JsonError(Exception):
+    """Исключение на случай, если полученный json некорректен."""
+    pass
+
+
+class ConnectError(Exception):
+    """Исключение на случай, если не удалось подключится к адресу."""
     pass

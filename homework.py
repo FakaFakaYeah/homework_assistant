@@ -8,7 +8,10 @@ import requests
 from dotenv import load_dotenv
 from telegram import TelegramError, Bot
 
-from exceptions import APIstatusCodeNot200Error
+from exceptions import (
+    APIstatusCodeNot200Error, TelegramMessageError,
+    JsonError, ConnectError
+)
 
 load_dotenv()
 
@@ -28,10 +31,6 @@ HOMEWORK_VERDICTS = {
     'rejected': 'Работа проверена: у ревьюера есть замечания.'
 }
 
-logging.basicConfig(
-    format='%(asctime)s - [%(levelname)s] - %(message)s - '
-           'Имя функции:[%(funcName)s] - %(lineno)d',
-    handlers=[logging.StreamHandler(sys.stdout)])
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
@@ -40,8 +39,10 @@ def send_message(bot, message):
     """Функция отправки сообщения."""
     try:
         bot.send_message(TELEGRAM_CHAT_ID, message)
-    except TelegramError:
-        raise TelegramError('Сообщение не было отправлено в Телеграм')
+    except TelegramError as error:
+        raise TelegramMessageError(f'Сообщение "{message}" '
+                                   f'не было отправлено в Телеграм. '
+                                   f'Ошибка: {error}.')
     else:
         logger.info('Сообщение отправленное в Телеграм')
 
@@ -52,13 +53,16 @@ def get_api_answer(current_timestamp):
     try:
         request = requests.get(ENDPOINT, headers=HEADERS, params=params)
     except requests.exceptions.RequestException as error:
-        raise APIstatusCodeNot200Error(f'Запрос завершился с ошибкой {error}')
+        raise ConnectError(f'Запрос завершился с ошибкой {error}')
     if request.status_code != HTTPStatus.OK:
         raise APIstatusCodeNot200Error(f'{ENDPOINT} недоступен, код ответа: '
                                        f'{request.status_code}')
     else:
         logger.info(f'Запрос к {ENDPOINT} прошел успешно')
-    return request.json()
+    try:
+        return request.json()
+    except requests.exceptions.RequestException as error:
+        raise JsonError(f'Полученный словарь json некоректен {error}')
 
 
 def check_response(response):
@@ -66,11 +70,8 @@ def check_response(response):
     if not isinstance(response, dict):
         raise TypeError('В ответе отсутствует словарь!')
     homeworks = response.get('homeworks')
-    current_date = response.get('current_date')
     if homeworks is None:
         raise KeyError('Нет ответа по ключу homeworks')
-    if current_date is None:
-        raise KeyError('Нет ответа по ключу current_date')
     if not isinstance(homeworks, list):
         raise TypeError('В ответе отсутствует список')
     return homeworks
@@ -82,8 +83,6 @@ def parse_status(homework):
     homework_status = homework.get('status')
     if homework_name is None:
         raise KeyError('Отсутствует ответ по ключу homework_name')
-    if homework_status is None:
-        raise KeyError('Отсутствует ответ по ключу status')
     if homework_status not in HOMEWORK_VERDICTS:
         raise KeyError(f'Статус {homework_status} не документирован')
     verdict = HOMEWORK_VERDICTS[homework_status]
@@ -92,14 +91,17 @@ def parse_status(homework):
 
 def check_tokens():
     """Функция проверки обязательных элементов окружения."""
-    environment_variables = [PRACTICUM_TOKEN, TELEGRAM_TOKEN, TELEGRAM_CHAT_ID]
-    return all(environment_variables)
+    return all((PRACTICUM_TOKEN, TELEGRAM_TOKEN, TELEGRAM_CHAT_ID))
 
 
 def main():
     """Основная логика работы бота."""
+    logging.basicConfig(
+        format='%(asctime)s - [%(levelname)s] - %(message)s - '
+               'Имя функции:[%(funcName)s] - %(lineno)d',
+        handlers=[logging.StreamHandler(sys.stdout)])
     logger.info('Бот начал свою работу')
-    if check_tokens() is False:
+    if not check_tokens():
         logger.critical('Отсутствуют обязательные переменные окружения!'
                         'Бот остановлен')
         sys.exit('Ошибка! Бот остановлен')
@@ -116,7 +118,11 @@ def main():
                     send_message(bot, message)
             else:
                 logger.debug('Отсутствуют новые статусы домашних работ!')
+            if response.get('current_date') is None:
+                logger.error('Нет ответа по ключу current_date')
             current_timestamp = response.get('current_date')
+        except TelegramMessageError as error:
+            logger.error(error)
         except Exception as error:
             message = f"Сбой в работе программы: {error}"
             if str(error) != str(last_error):
