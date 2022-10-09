@@ -10,7 +10,7 @@ from telegram import TelegramError, Bot
 
 from exceptions import (
     APIstatusCodeNot200Error, TelegramMessageError,
-    JsonError, ConnectError
+    ConnectAndJsonError
 )
 
 load_dotenv()
@@ -32,7 +32,7 @@ HOMEWORK_VERDICTS = {
 }
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
+logger.setLevel(logging.INFO)
 
 
 def send_message(bot, message):
@@ -40,9 +40,10 @@ def send_message(bot, message):
     try:
         bot.send_message(TELEGRAM_CHAT_ID, message)
     except TelegramError as error:
-        raise TelegramMessageError(f'Сообщение "{message}" '
-                                   f'не было отправлено в Телеграм. '
-                                   f'Ошибка: {error}.')
+        raise TelegramMessageError(
+            f'Сообщение "{message}" не было отправлено в Телеграм.'
+            f' Ошибка: {error}.'
+        )
     else:
         logger.info('Сообщение отправленное в Телеграм')
 
@@ -51,18 +52,16 @@ def get_api_answer(current_timestamp):
     """Функция подключения к API яндекса."""
     params = {'from_date': current_timestamp}
     try:
-        request = requests.get(ENDPOINT, headers=HEADERS, params=params)
+        response = requests.get(ENDPOINT, headers=HEADERS, params=params)
+        if response.status_code != HTTPStatus.OK:
+            raise APIstatusCodeNot200Error(
+                f'{ENDPOINT} недоступен, код ответа: {response.status_code}'
+            )
+        return response.json()
     except requests.exceptions.RequestException as error:
-        raise ConnectError(f'Запрос завершился с ошибкой {error}')
-    if request.status_code != HTTPStatus.OK:
-        raise APIstatusCodeNot200Error(f'{ENDPOINT} недоступен, код ответа: '
-                                       f'{request.status_code}')
+        raise ConnectAndJsonError(f'Запрос завершился с ошибкой {error}')
     else:
         logger.info(f'Запрос к {ENDPOINT} прошел успешно')
-    try:
-        return request.json()
-    except requests.exceptions.RequestException as error:
-        raise JsonError(f'Полученный словарь json некоректен {error}')
 
 
 def check_response(response):
@@ -70,8 +69,11 @@ def check_response(response):
     if not isinstance(response, dict):
         raise TypeError('В ответе отсутствует словарь!')
     homeworks = response.get('homeworks')
+    current_date = response.get('current_date')
     if homeworks is None:
         raise KeyError('Нет ответа по ключу homeworks')
+    if current_date is None:
+        logger.error('Нет ответа по ключу current_date')
     if not isinstance(homeworks, list):
         raise TypeError('В ответе отсутствует список')
     return homeworks
@@ -117,18 +119,16 @@ def main():
                     message = parse_status(homework)
                     send_message(bot, message)
             else:
-                logger.debug('Отсутствуют новые статусы домашних работ!')
-            if response.get('current_date') is None:
-                logger.error('Нет ответа по ключу current_date')
+                logger.info('Отсутствуют новые статусы домашних работ!')
             current_timestamp = response.get('current_date')
         except TelegramMessageError as error:
             logger.error(error)
         except Exception as error:
             message = f"Сбой в работе программы: {error}"
+            logger.error(message)
             if str(error) != str(last_error):
                 send_message(bot, message)
                 last_error = error
-            logger.error(message)
         finally:
             time.sleep(RETRY_TIME)
 

@@ -8,11 +8,6 @@ class TelegramMessageError(Exception):
     pass
 
 
-class JsonError(Exception):
-    """Исключение на случай, если полученный json некорректен."""
-    pass
-
-
-class ConnectError(Exception):
+class ConnectAndJsonError(Exception):
     """Исключение на случай, если не удалось подключится к адресу."""
     pass
