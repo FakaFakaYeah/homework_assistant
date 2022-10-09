@@ -60,8 +60,6 @@ def get_api_answer(current_timestamp):
         return response.json()
     except requests.exceptions.RequestException as error:
         raise ConnectAndJsonError(f'Запрос завершился с ошибкой {error}')
-    else:
-        logger.info(f'Запрос к {ENDPOINT} прошел успешно')
 
 
 def check_response(response):
