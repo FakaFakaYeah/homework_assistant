@@ -126,12 +126,12 @@ def main():
         except Exception as error:
             message = f"Сбой в работе программы: {error}"
             logger.error(message)
-            if str(error) != str(last_error):
-                try:
+            try:
+                if str(error) != str(last_error):
                     send_message(bot, message)
                     last_error = error
-                except TelegramMessageError as error:
-                    logger.error(error)
+            except TelegramMessageError as error:
+                logger.error(error)
         finally:
             time.sleep(RETRY_TIME)
 
