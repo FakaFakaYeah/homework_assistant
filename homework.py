@@ -129,7 +129,8 @@ def main():
                     send_message(bot, message)
             except TelegramMessageError as error:
                 logger.error(error)
-            last_error = error
+            else:
+                last_error = error
         finally:
             time.sleep(RETRY_TIME)
 
