@@ -125,9 +125,7 @@ def main():
             message = f"Сбой в работе программы: {error}"
             logger.error(message)
             try:
-                if str(error) != str(last_error):
-                    send_message(bot, message)
-                    last_error = error
+                send_message(bot, message)
             except TelegramMessageError as error:
                 logger.error(error)
         finally:
