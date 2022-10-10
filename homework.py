@@ -10,7 +10,7 @@ from telegram import TelegramError, Bot
 
 from exceptions import (
     APIstatusCodeNot200Error, TelegramMessageError,
-    ConnectAndJsonError
+    ConnectAndJsonError, CurrentDateKeyError
 )
 
 load_dotenv()
@@ -71,7 +71,7 @@ def check_response(response):
     if homeworks is None:
         raise KeyError('Нет ответа по ключу homeworks')
     if current_date is None:
-        logger.error('Нет ответа по ключу current_date')
+        raise CurrentDateKeyError('Нет ответа по ключу current_date')
     if not isinstance(homeworks, list):
         raise TypeError('В ответе отсутствует список')
     return homeworks
@@ -119,13 +119,18 @@ def main():
             else:
                 logger.info('Отсутствуют новые статусы домашних работ!')
             current_timestamp = response.get('current_date')
+        except CurrentDateKeyError as error:
+            logger.error(f'Обрати внимание! {error}')
         except TelegramMessageError as error:
             logger.error(error)
         except Exception as error:
             message = f"Сбой в работе программы: {error}"
             logger.error(message)
             if str(error) != str(last_error):
-                send_message(bot, message)
+                try:
+                    send_message(bot, message)
+                except TelegramMessageError as error:
+                    logger.error(error)
                 last_error = error
         finally:
             time.sleep(RETRY_TIME)

@@ -11,3 +11,8 @@ class TelegramMessageError(Exception):
 class ConnectAndJsonError(Exception):
     """Исключение на случай, если не удалось подключится к адресу."""
     pass
+
+
+class CurrentDateKeyError(Exception):
+    """Исключение на случай, если не удалось получит ключ current_date."""
+    pass
