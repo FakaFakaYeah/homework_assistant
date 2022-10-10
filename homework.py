@@ -107,6 +107,7 @@ def main():
         sys.exit('Ошибка! Бот остановлен')
     bot = Bot(token=TELEGRAM_TOKEN)
     current_timestamp = int(time.time())
+    last_error = ""
     while True:
         try:
             response = get_api_answer(current_timestamp)
@@ -123,10 +124,12 @@ def main():
         except Exception as error:
             message = f"Сбой в работе программы: {error}"
             logger.error(message)
-            try:
-                send_message(bot, message)
-            except TelegramMessageError as error:
-                logger.error(error)
+            if str(error) != str(last_error):
+                try:
+                    send_message(bot, message)
+                    last_error = error
+                except TelegramMessageError as error:
+                    logger.error(error)
         finally:
             time.sleep(RETRY_TIME)
 
