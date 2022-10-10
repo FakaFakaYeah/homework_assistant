@@ -130,8 +130,7 @@ def main():
                     last_error = error
             except TelegramMessageError as error:
                 logger.error(error)
-        finally:
-            time.sleep(RETRY_TIME)
+        time.sleep(RETRY_TIME)
 
 
 if __name__ == '__main__':
