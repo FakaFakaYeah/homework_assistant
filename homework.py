@@ -116,8 +116,7 @@ def main():
                 for homework in check_response_homework:
                     message = parse_status(homework)
                     send_message(bot, message)
-            else:
-                logger.info('Отсутствуют новые статусы домашних работ!')
+            logger.info('Отсутствуют новые статусы домашних работ!')
             current_timestamp = response.get('current_date')
         except (TelegramMessageError, CurrentDateKeyError) as error:
             logger.error(error)
