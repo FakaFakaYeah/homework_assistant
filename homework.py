@@ -129,9 +129,9 @@ def main():
             if str(error) != str(last_error):
                 try:
                     send_message(bot, message)
+                    last_error = error
                 except TelegramMessageError as error:
                     logger.error(error)
-                last_error = error
         finally:
             time.sleep(RETRY_TIME)
 
