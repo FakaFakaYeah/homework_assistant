@@ -107,7 +107,6 @@ def main():
         sys.exit('Ошибка! Бот остановлен')
     bot = Bot(token=TELEGRAM_TOKEN)
     current_timestamp = int(time.time())
-    last_error = ""
     while True:
         try:
             response = get_api_answer(current_timestamp)
