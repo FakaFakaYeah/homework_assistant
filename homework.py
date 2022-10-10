@@ -94,6 +94,12 @@ def check_tokens():
     return all((PRACTICUM_TOKEN, TELEGRAM_TOKEN, TELEGRAM_CHAT_ID))
 
 
+def check_message_error(bot, message, error, last_error):
+    """Функция проверки повторной отправки ошибки в телеграмм."""
+    if str(error) != str(last_error):
+        send_message(bot, message)
+
+
 def main():
     """Основная логика работы бота."""
     logging.basicConfig(
@@ -124,12 +130,11 @@ def main():
         except Exception as error:
             message = f"Сбой в работе программы: {error}"
             logger.error(message)
-            if str(error) != str(last_error):
-                try:
-                    send_message(bot, message)
-                    last_error = error
-                except TelegramMessageError as error:
-                    logger.error(error)
+            try:
+                check_message_error(bot, message, error, last_error)
+                last_error = error
+            except TelegramMessageError as error:
+                logger.error(error)
         finally:
             time.sleep(RETRY_TIME)
 
