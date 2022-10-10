@@ -119,9 +119,7 @@ def main():
             else:
                 logger.info('Отсутствуют новые статусы домашних работ!')
             current_timestamp = response.get('current_date')
-        except CurrentDateKeyError as error:
-            logger.error(f'Обрати внимание! {error}')
-        except TelegramMessageError as error:
+        except (TelegramMessageError, CurrentDateKeyError) as error:
             logger.error(error)
         except Exception as error:
             message = f"Сбой в работе программы: {error}"
