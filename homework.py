@@ -10,7 +10,8 @@ from telegram import TelegramError, Bot
 
 from exceptions import (
     APIstatusCodeNot200Error, TelegramMessageError,
-    ConnectAndJsonError, CurrentDateKeyError
+    ConnectAndJsonError, CurrentDateKeyError,
+    LoggerError
 )
 
 load_dotenv()
@@ -72,6 +73,8 @@ def check_response(response):
         raise KeyError('Нет ответа по ключу homeworks')
     if current_date is None:
         raise CurrentDateKeyError('Нет ответа по ключу current_date')
+    if not isinstance(current_date, int):
+        raise CurrentDateKeyError('Ответ по ключу current_date не число.')
     if not isinstance(homeworks, list):
         raise TypeError('В ответе отсутствует список')
     return homeworks
@@ -96,8 +99,13 @@ def check_tokens():
 
 def check_message_error(bot, message, error, last_error):
     """Функция проверки повторной отправки ошибки в телеграмм."""
-    if str(error) != str(last_error):
-        send_message(bot, message)
+    try:
+        if str(error) != str(last_error):
+            send_message(bot, message)
+            last_error = error
+        return last_error
+    except TelegramMessageError as error:
+        logger.error(error)
 
 
 def main():
@@ -125,16 +133,12 @@ def main():
             else:
                 logger.info('Отсутствуют новые статусы домашних работ!')
             current_timestamp = response.get('current_date')
-        except (TelegramMessageError, CurrentDateKeyError) as error:
+        except LoggerError as error:
             logger.error(error)
         except Exception as error:
             message = f"Сбой в работе программы: {error}"
             logger.error(message)
-            try:
-                check_message_error(bot, message, error, last_error)
-                last_error = error
-            except TelegramMessageError as error:
-                logger.error(error)
+            last_error = check_message_error(bot, message, error, last_error)
         finally:
             time.sleep(RETRY_TIME)
 
