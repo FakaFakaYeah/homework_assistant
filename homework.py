@@ -17,13 +17,13 @@ from exceptions import (
 load_dotenv()
 
 
-PRACTICUM_TOKEN = os.getenv('PRACTICUM_TOKEN')
+API_TOKEN = os.getenv('API_TOKEN')
 TELEGRAM_TOKEN = os.getenv('TELEGRAM_TOKEN')
 TELEGRAM_CHAT_ID = os.getenv('TELEGRAM_CHAT_ID')
 
 RETRY_TIME = 600
 ENDPOINT = 'https://practicum.yandex.ru/api/user_api/homework_statuses/'
-HEADERS = {'Authorization': f'OAuth {PRACTICUM_TOKEN}'}
+HEADERS = {'Authorization': f'OAuth {API_TOKEN}'}
 
 
 HOMEWORK_VERDICTS = {
@@ -33,7 +33,6 @@ HOMEWORK_VERDICTS = {
 }
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
 
 
 def send_message(bot, message):
@@ -94,7 +93,11 @@ def parse_status(homework):
 
 def check_tokens():
     """Функция проверки обязательных элементов окружения."""
-    return all((PRACTICUM_TOKEN, TELEGRAM_TOKEN, TELEGRAM_CHAT_ID))
+    for token in ['API_TOKEN', 'TELEGRAM_TOKEN', 'TELEGRAM_CHAT_ID']:
+        if not globals().get(token):
+            logger.critical(f'Отсутствует переменная окружения {token}!')
+            return False
+    return True
 
 
 def check_message_error(bot, message, error, last_error):
@@ -113,11 +116,10 @@ def main():
     logging.basicConfig(
         format='%(asctime)s - [%(levelname)s] - %(message)s - '
                'Имя функции:[%(funcName)s] - %(lineno)d',
+        level=logging.INFO,
         handlers=[logging.StreamHandler(sys.stdout)])
     logger.info('Бот начал свою работу')
     if not check_tokens():
-        logger.critical('Отсутствуют обязательные переменные окружения!'
-                        'Бот остановлен')
         sys.exit('Ошибка! Бот остановлен')
     bot = Bot(token=TELEGRAM_TOKEN)
     current_timestamp = int(time.time())

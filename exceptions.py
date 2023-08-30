@@ -9,7 +9,7 @@ class APIstatusCodeNot200Error(Exception):
 
 
 class TelegramMessageError(LoggerError):
-    """Исключение на случай, если ответ API некорректен."""
+    """Исключение на случай, если при отправке в телеграмм ошибка."""
     pass
 
 
