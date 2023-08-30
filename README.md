@@ -90,6 +90,7 @@ ___
 
   ```
   pip install -r requirements.txt
+  ```
   
 * Заполните .env файл по шаблону указанному выше
 
